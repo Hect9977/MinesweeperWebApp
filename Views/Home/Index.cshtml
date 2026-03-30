@@ -1,0 +1,18 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+<div class="container mt-5">
+    <div class="text-center">
+        <h1 class="display-4">Welcome to Minesweeper</h1>
+        <p class="lead">Register or log in to start playing.</p>
+    </div>
+
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-8 text-center">
+            <a asp-controller="Account" asp-action="Register" class="btn btn-primary m-2">Register</a>
+            <a asp-controller="Account" asp-action="Login" class="btn btn-success m-2">Login</a>
+            <a asp-controller="Game" asp-action="StartGame" class="btn btn-dark m-2">Start Game</a>
+        </div>
+    </div>
+</div>
