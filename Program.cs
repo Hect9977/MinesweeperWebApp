@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MinesweeperWeb.Data;
+using MinesweeperWebApp.Services;
 
 namespace MinesweeperWebApp
 {
@@ -12,12 +13,15 @@ namespace MinesweeperWebApp
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
-            // Add DbContext
+            // Add DbContext so the app can connect to SQL Server.
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-            // Add Session
+            // Add Session so the app can track logged-in users.
             builder.Services.AddSession();
+
+            // Add the score service so it can be used in the controller.
+            builder.Services.AddScoped<ScoreService>();
 
             var app = builder.Build();
 
@@ -33,7 +37,7 @@ namespace MinesweeperWebApp
 
             app.UseRouting();
 
-            // Enable Session
+            // Enable Session before controller actions run.
             app.UseSession();
 
             app.UseAuthorization();

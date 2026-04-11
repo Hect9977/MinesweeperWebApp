@@ -1,0 +1,49 @@
+﻿@{
+    ViewData["Title"] = "Hall Of Fame";
+}
+
+<style>
+    .hof-page {
+        text-align: center;
+        padding: 40px 20px;
+        min-height: 80vh;
+        background: linear-gradient(to bottom, #1a1a1a, #333);
+        color: white;
+    }
+
+    .hof-title {
+        font-size: 3rem;
+        font-weight: bold;
+        color: gold;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .hof-box {
+        margin: 0 auto;
+        max-width: 600px;
+        padding: 25px;
+        border: 2px solid gold;
+        border-radius: 12px;
+        background-color: rgba(255,255,255,0.05);
+        font-size: 1.2rem;
+    }
+
+    .hof-placeholder {
+        margin-top: 15px;
+        font-style: italic;
+        color: #ccc;
+    }
+</style>
+
+<div class="hof-page">
+    <h2 class="hof-title">🏆 HALL OF FAME 🏆</h2>
+
+    <div class="hof-box">
+        <p>Top players and scores will be displayed here.</p>
+
+        <p class="hof-placeholder">
+            Future update: Save scores based on time, board size, games played, and difficulty.
+        </p>
+    </div>
+</div>

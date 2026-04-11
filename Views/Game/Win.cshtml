@@ -1,0 +1,250 @@
+﻿@{
+    ViewData["Title"] = "Win";
+}
+
+<style>
+    .winner-page {
+        text-align: center;
+        padding: 40px 20px;
+        position: relative;
+        overflow: hidden;
+        min-height: 80vh;
+        background: linear-gradient(to bottom, #fff8dc, #fffacd);
+    }
+
+    .winner-title {
+        font-size: 3.5rem;
+        font-weight: bold;
+        color: #d4af37;
+        text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+    }
+
+    .winner-message {
+        font-size: 1.3rem;
+        margin-bottom: 20px;
+        max-width: 850px;
+        margin-left: auto;
+        margin-right: auto;
+        position: relative;
+        z-index: 2;
+    }
+
+    .score-box {
+        display: inline-block;
+        background-color: white;
+        border: 3px solid #d4af37;
+        border-radius: 15px;
+        padding: 20px 30px;
+        margin-top: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        font-size: 1.4rem;
+        font-weight: bold;
+        position: relative;
+        z-index: 2;
+    }
+
+    .score-message {
+        margin-top: 20px;
+        font-size: 1.2rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .coin {
+        position: absolute;
+        top: -60px;
+        font-size: 2rem;
+        animation: fall linear infinite;
+        opacity: 0.9;
+    }
+
+    .confetti {
+        position: absolute;
+        top: -20px;
+        width: 14px;
+        height: 14px;
+        animation: fall linear infinite;
+        opacity: 0.85;
+    }
+
+    .coin1 {
+        left: 5%;
+        animation-duration: 4s;
+    }
+
+    .coin2 {
+        left: 12%;
+        animation-duration: 5s;
+    }
+
+    .coin3 {
+        left: 20%;
+        animation-duration: 3.5s;
+    }
+
+    .coin4 {
+        left: 28%;
+        animation-duration: 4.8s;
+    }
+
+    .coin5 {
+        left: 36%;
+        animation-duration: 5.5s;
+    }
+
+    .coin6 {
+        left: 44%;
+        animation-duration: 4.2s;
+    }
+
+    .coin7 {
+        left: 52%;
+        animation-duration: 3.8s;
+    }
+
+    .coin8 {
+        left: 60%;
+        animation-duration: 5.2s;
+    }
+
+    .coin9 {
+        left: 68%;
+        animation-duration: 4.4s;
+    }
+
+    .coin10 {
+        left: 76%;
+        animation-duration: 3.9s;
+    }
+
+    .coin11 {
+        left: 84%;
+        animation-duration: 5.1s;
+    }
+
+    .coin12 {
+        left: 92%;
+        animation-duration: 4.3s;
+    }
+
+    .confetti1 {
+        left: 8%;
+        background-color: red;
+        animation-duration: 3s;
+    }
+
+    .confetti2 {
+        left: 16%;
+        background-color: blue;
+        animation-duration: 4s;
+    }
+
+    .confetti3 {
+        left: 24%;
+        background-color: green;
+        animation-duration: 3.5s;
+    }
+
+    .confetti4 {
+        left: 32%;
+        background-color: orange;
+        animation-duration: 4.5s;
+    }
+
+    .confetti5 {
+        left: 40%;
+        background-color: purple;
+        animation-duration: 3.8s;
+    }
+
+    .confetti6 {
+        left: 48%;
+        background-color: hotpink;
+        animation-duration: 4.2s;
+    }
+
+    .confetti7 {
+        left: 56%;
+        background-color: gold;
+        animation-duration: 3.4s;
+    }
+
+    .confetti8 {
+        left: 64%;
+        background-color: cyan;
+        animation-duration: 4.7s;
+    }
+
+    .confetti9 {
+        left: 72%;
+        background-color: lime;
+        animation-duration: 3.9s;
+    }
+
+    .confetti10 {
+        left: 80%;
+        background-color: tomato;
+        animation-duration: 4.1s;
+    }
+
+    .confetti11 {
+        left: 88%;
+        background-color: violet;
+        animation-duration: 3.6s;
+    }
+
+    .confetti12 {
+        left: 96%;
+        background-color: dodgerblue;
+        animation-duration: 4.4s;
+    }
+
+    @@keyframes fall {
+        0% {
+            transform: translateY(0) rotate(0deg);
+        }
+
+        100% {
+            transform: translateY(100vh) rotate(360deg);
+        }
+    }
+</style>
+
+<div class="winner-page">
+    <div class="coin coin1">🪙</div>
+    <div class="coin coin2">🪙</div>
+    <div class="coin coin3">🪙</div>
+    <div class="coin coin4">🪙</div>
+    <div class="coin coin5">🪙</div>
+    <div class="coin coin6">🪙</div>
+    <div class="coin coin7">🪙</div>
+    <div class="coin coin8">🪙</div>
+    <div class="coin coin9">🪙</div>
+    <div class="coin coin10">🪙</div>
+    <div class="coin coin11">🪙</div>
+    <div class="coin coin12">🪙</div>
+
+    <div class="confetti confetti1"></div>
+    <div class="confetti confetti2"></div>
+    <div class="confetti confetti3"></div>
+    <div class="confetti confetti4"></div>
+    <div class="confetti confetti5"></div>
+    <div class="confetti confetti6"></div>
+    <div class="confetti confetti7"></div>
+    <div class="confetti confetti8"></div>
+    <div class="confetti confetti9"></div>
+    <div class="confetti confetti10"></div>
+    <div class="confetti confetti11"></div>
+    <div class="confetti confetti12"></div>
+
+    <h2 class="winner-title">WINNER!!!</h2>
+
+    <p class="winner-message">@ViewBag.WinMessage</p>
+
+    <div class="score-box">
+        Winning Score: @ViewBag.Score
+    </div>
+
+    <p class="score-message">@ViewBag.ScoreMessage</p>
+</div>
