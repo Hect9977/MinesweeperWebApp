@@ -1,152 +1,57 @@
-﻿@{
+﻿@model MinesweeperWebApp.Models.Board
+
+@{
     ViewData["Title"] = "MineSweeperBoard";
 }
 
-<style>
-    .board-page {
-        text-align: center;
-        padding: 30px 20px;
-        min-height: 80vh;
-        background-color: #2f343f;
-        color: white;
-    }
-
-    .board-title {
-        font-size: 2.8rem;
-        font-weight: bold;
-        margin-bottom: 15px;
-        color: #f8fafc;
-    }
-
-    .board-subtitle {
-        font-size: 1.1rem;
-        margin-bottom: 25px;
-        color: #d1d5db;
-    }
-
-    .game-info-box {
-        margin: 0 auto 25px auto;
-        max-width: 750px;
-        padding: 15px 20px;
-        border: 2px solid #6b7280;
-        border-radius: 12px;
-        background-color: #3b4250;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-        font-size: 1rem;
-        font-weight: 600;
-        color: #f9fafb;
-    }
-
-    .board-grid {
-        display: grid;
-        grid-template-columns: repeat(8, 60px);
-        gap: 6px;
-        justify-content: center;
-        margin-top: 20px;
-    }
-
-    .board-cell {
-        width: 60px;
-        height: 60px;
-        border: 2px solid #6b7280;
-        border-radius: 6px;
-        background: linear-gradient(to bottom, #4b5563, #374151);
-        color: #f9fafb;
-        font-size: 1.4rem;
-        font-weight: bold;
-        cursor: pointer;
-        transition: transform 0.15s ease, background 0.15s ease;
-        box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.08), 0 2px 4px rgba(0, 0, 0, 0.3);
-    }
-
-        .board-cell:hover {
-            background: linear-gradient(to bottom, #5b6675, #43505f);
-            transform: scale(1.04);
-        }
-</style>
+<link rel="stylesheet" href="~/css/minesweeper.css" />
 
 <div class="board-page">
     <h2 class="board-title">Minesweeper Board</h2>
 
     <p class="board-subtitle">
-        Placeholder layout for the game board. The live board logic will connect here once the game classes are added.
+        Click carefully and avoid the mines.
     </p>
 
     <div class="game-info-box">
-        Player: @ViewBag.GameOwner | Board Size: @ViewBag.BoardSize x @ViewBag.BoardSize | Difficulty: @ViewBag.Difficulty | Time: 00:00 | Score: 0
+        Player: @ViewBag.GameOwner |
+        Board Size: @ViewBag.BoardSize x @ViewBag.BoardSize |
+        Difficulty: @ViewBag.Difficulty |
+        Time: 00:00 |
+        Score: 0
     </div>
 
-    <div class="board-grid">
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
+    <<div class="board-grid" style="grid-template-columns: repeat(@Model.Size, 60px);">
+        @for (int row = 0; row < Model.Size; row++)
+        {
+            for (int col = 0; col < Model.Size; col++)
+            {
+                var cell = Model.Cells[row][col];
 
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
+                <form asp-controller="Game" asp-action="LeftClick" method="post" style="display:inline;">
+                    <input type="hidden" name="row" value="@row" />
+                    <input type="hidden" name="col" value="@col" />
 
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
-        <button class="board-cell">?</button>
+                    <button class="board-cell" type="submit">
+                        @if (!cell.IsVisited)
+                        {
+                            <img src="~/img/hidden.png" alt="Hidden Tile" class="tile-img" />
+                        }
+                        else if (cell.HasMine)
+                        {
+                            <img src="~/img/mine.png" alt="Mine Tile" class="tile-img" />
+                        }
+                        else if (cell.LiveNeighbors > 0)
+                        {
+                            <img src="~/img/tile@(cell.LiveNeighbors).png" alt="Tile @cell.LiveNeighbors" class="tile-img" />
+                        }
+                        else
+                        {
+                            <img src="~/img/revealed.png" alt="Revealed Tile" class="tile-img" />
+                        }
+                    </button>
+                </form>
+            }
+        }
     </div>
 </div>

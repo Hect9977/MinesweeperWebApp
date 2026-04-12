@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MinesweeperWebApp.Services;
+using System.Text.Json;
+using MinesweeperWebApp.Models;
 
 namespace MinesweeperWebApp.Controllers
 {
@@ -40,57 +42,79 @@ namespace MinesweeperWebApp.Controllers
             return View();
         }
 
-        // This page will eventually show the Minesweeper board.
-        // It should only open for the specific user who started the game.
+        // From Hector:
+        // Update: This version of the method saves the game settings and board to session, then redirects to a new action that loads the board page.
+        // This way we can ensure only the player who started the game can access the board.
         [HttpPost]
         public IActionResult MineSweeperBoard(int boardSize, string difficulty)
         {
             string loggedIn = HttpContext.Session.GetString("LoggedIn");
             string username = HttpContext.Session.GetString("Username");
 
-            // Block access if the user is not logged in.
             if (loggedIn != "true" || string.IsNullOrEmpty(username))
             {
                 TempData["Message"] = "You must log in before viewing the game board.";
                 return RedirectToAction("Login", "Account");
             }
 
-            // Save the current game owner and selected setup in session.
             HttpContext.Session.SetString("GameOwner", username);
             HttpContext.Session.SetInt32("BoardSize", boardSize);
             HttpContext.Session.SetString("Difficulty", difficulty);
 
-            // Send the values to the page.
-            ViewBag.BoardSize = boardSize;
-            ViewBag.Difficulty = difficulty;
-            ViewBag.GameOwner = username;
+            Board board = new Board(boardSize);
 
-            return View();
+            string boardJson = JsonSerializer.Serialize(board);
+            HttpContext.Session.SetString("CurrentBoard", boardJson);
+
+            return RedirectToAction("LoadMineSweeperBoard");
         }
 
-        // This version loads the board page only if the same user started the game.
+        // Update: This new action loads the board page, but first checks if the user is logged in and is the owner of the game before allowing access.
         public IActionResult LoadMineSweeperBoard()
         {
             string loggedIn = HttpContext.Session.GetString("LoggedIn");
             string username = HttpContext.Session.GetString("Username");
             string gameOwner = HttpContext.Session.GetString("GameOwner");
 
-            // Make sure the user is logged in and is the same one who started the game.
             if (loggedIn != "true" || string.IsNullOrEmpty(username) || gameOwner != username)
             {
                 TempData["Message"] = "Only the player who started this game can access the board.";
                 return RedirectToAction("Login", "Account");
             }
 
-            // Pull the saved game settings back out of session.
             int boardSize = HttpContext.Session.GetInt32("BoardSize") ?? 8;
             string difficulty = HttpContext.Session.GetString("Difficulty") ?? "Easy";
+
+            string boardJson = HttpContext.Session.GetString("CurrentBoard");
+            Board board = string.IsNullOrEmpty(boardJson)
+                ? new Board(boardSize)
+                : JsonSerializer.Deserialize<Board>(boardJson);
 
             ViewBag.BoardSize = boardSize;
             ViewBag.Difficulty = difficulty;
             ViewBag.GameOwner = username;
 
-            return View("MineSweeperBoard");
+            return View("MineSweeperBoard", board);
+        }
+
+        // This method is called when the player clicks on a cell to reveal it.
+        [HttpPost]
+        public IActionResult LeftClick(int row, int col)
+        {
+            string boardJson = HttpContext.Session.GetString("CurrentBoard");
+
+            if (string.IsNullOrEmpty(boardJson))
+            {
+                return RedirectToAction("StartGame");
+            }
+
+            Board board = JsonSerializer.Deserialize<Board>(boardJson);
+
+            board.RevealCell(row, col);
+
+            HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(board));
+
+            return RedirectToAction("LoadMineSweeperBoard");
         }
 
         // This page is shown when the player wins the game.
