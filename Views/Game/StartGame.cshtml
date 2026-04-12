@@ -1,10 +1,115 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-    ViewData["Title"] = "New Game";
+﻿@{
+    ViewData["Title"] = "StartGame";
 }
 
-<h2>Game On!</h2>
-<p>This page is restricted to logged-in users only.</p>
-<p>Placeholder text for the Minesweeper game will go here.</p>
+<style>
+    .startgame-page {
+        text-align: center;
+        padding: 30px 20px;
+        min-height: 80vh;
+        background-color: #2f343f;
+        color: white;
+    }
+
+    .startgame-title {
+        font-size: 2.8rem;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #f8fafc;
+    }
+
+    .startgame-subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+        color: #d1d5db;
+    }
+
+    .setup-box {
+        margin: 0 auto;
+        max-width: 700px;
+        padding: 30px;
+        border: 2px solid #6b7280;
+        border-radius: 14px;
+        background-color: #3b4250;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        text-align: left;
+    }
+
+        .setup-box label {
+            font-weight: bold;
+            margin-bottom: 8px;
+            display: block;
+            color: #f9fafb;
+        }
+
+        .setup-box select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #9ca3af;
+            background-color: #4b5563;
+            color: white;
+            font-size: 1rem;
+        }
+
+    .difficulty-options {
+        margin-bottom: 25px;
+    }
+
+        .difficulty-options input {
+            margin-right: 8px;
+        }
+
+        .difficulty-options label {
+            display: inline-block;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+
+    .start-button {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 10px;
+        background: linear-gradient(to bottom, #2563eb, #1d4ed8);
+        color: white;
+        font-size: 1.1rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+        .start-button:hover {
+            background: linear-gradient(to bottom, #3b82f6, #2563eb);
+            transform: scale(1.02);
+        }
+</style>
+
+<div class="startgame-page">
+    <h2 class="startgame-title">Start New Game</h2>
+
+    <p class="startgame-subtitle">
+        Choose your board size and difficulty level before starting the game.
+    </p>
+
+    <div class="setup-box">
+        <form asp-controller="Game" asp-action="MineSweeperBoard" method="post">
+            <label for="boardSize">Board Size</label>
+            <select id="boardSize" name="boardSize">
+                <option value="8">8 x 8</option>
+                <option value="10">10 x 10</option>
+                <option value="12">12 x 12</option>
+            </select>
+
+            <label>Difficulty Level</label>
+            <div class="difficulty-options">
+                <label><input type="radio" name="difficulty" value="Easy" checked /> Easy</label>
+                <label><input type="radio" name="difficulty" value="Medium" /> Medium</label>
+                <label><input type="radio" name="difficulty" value="Hard" /> Hard</label>
+            </div>
+
+            <button type="submit" class="start-button">Start Game</button>
+        </form>
+    </div>
+</div>
