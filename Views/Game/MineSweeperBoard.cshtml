@@ -18,10 +18,10 @@
         Board Size: @ViewBag.BoardSize x @ViewBag.BoardSize |
         Difficulty: @ViewBag.Difficulty |
         Time: 00:00 |
-        Score: 0
+        Score: @ViewBag.Score
     </div>
 
-    <<div class="board-grid" style="grid-template-columns: repeat(@Model.Size, 60px);">
+    <div class="board-grid" style="grid-template-columns: repeat(@Model.Size, 60px);">
         @for (int row = 0; row < Model.Size; row++)
         {
             for (int col = 0; col < Model.Size; col++)
@@ -55,3 +55,12 @@
         }
     </div>
 </div>
+
+@if (ViewBag.ShowLossDelay == "true")
+{
+    <script>
+        setTimeout(function () {
+            window.location.href = '@Url.Action("Loss", "Game")';
+        }, 1200);
+    </script>
+}
