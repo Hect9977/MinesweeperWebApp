@@ -93,11 +93,14 @@ namespace MinesweeperWebApp.Controllers
             ViewBag.BoardSize = boardSize;
             ViewBag.Difficulty = difficulty;
             ViewBag.GameOwner = username;
+            ViewBag.Score = board.Score;
+            ViewBag.ShowLossDelay = TempData["ShowLossDelay"] as string;
 
             return View("MineSweeperBoard", board);
         }
 
         // This method is called when the player clicks on a cell to reveal it.
+        [HttpPost]
         [HttpPost]
         public IActionResult LeftClick(int row, int col)
         {
@@ -113,6 +116,18 @@ namespace MinesweeperWebApp.Controllers
             board.RevealCell(row, col);
 
             HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(board));
+            HttpContext.Session.SetInt32("CurrentScore", board.Score);
+
+            if (board.IsGameOver)
+            {
+                TempData["ShowLossDelay"] = "true";
+                return RedirectToAction("LoadMineSweeperBoard");
+            }
+
+            if (board.IsWin)
+            {
+                return RedirectToAction("Win");
+            }
 
             return RedirectToAction("LoadMineSweeperBoard");
         }
