@@ -1,0 +1,82 @@
+.board-page {
+    text-align: center;
+    padding: 30px 20px;
+    min-height: 80vh;
+    background: #2f343f;
+    color: white;
+}
+
+.board-title {
+    font-size: 2.8rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #f8fafc;
+}
+
+.board-subtitle {
+    font-size: 1.1rem;
+    margin-bottom: 25px;
+    color: #d1d5db;
+}
+
+.game-info-box {
+    margin: 0 auto 25px auto;
+    max-width: 750px;
+    padding: 15px 20px;
+    border: 2px solid #6b7280;
+    border-radius: 12px;
+    background-color: #3b4250;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+    font-size: 1rem;
+    font-weight: 600;
+    color: #f9fafb;
+}
+
+.board-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 64px);
+    gap: 6px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.board-cell {
+    width: 60px;
+    height: 60px;
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.tile-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
+}
+
+    .board-cell img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        transition: transform 0.15s ease;
+    }
+
+    .board-cell:hover img {
+        transform: scale(1.05);
+    }
+
+@@media (max-width: 768px) {
+    .board-grid {
+        grid-template-columns: repeat(8, 42px);
+        gap: 4px;
+    }
+
+    .board-cell {
+        width: 42px;
+        height: 42px;
+    }
+}
