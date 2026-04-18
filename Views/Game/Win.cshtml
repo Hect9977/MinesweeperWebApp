@@ -44,12 +44,44 @@
         z-index: 2;
     }
 
+    .details-box {
+        display: inline-block;
+        background-color: white;
+        border: 2px solid #d4af37;
+        border-radius: 15px;
+        padding: 15px 25px;
+        margin-top: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+        font-size: 1.05rem;
+        position: relative;
+        z-index: 2;
+        line-height: 1.8;
+    }
+
     .score-message {
         margin-top: 20px;
         font-size: 1.2rem;
         position: relative;
         z-index: 2;
     }
+
+    .play-again-btn {
+        display: inline-block;
+        margin-top: 25px;
+        padding: 12px 24px;
+        background-color: #d4af37;
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 10px;
+        position: relative;
+        z-index: 2;
+    }
+
+        .play-again-btn:hover {
+            background-color: #b8942f;
+            color: white;
+        }
 
     .coin {
         position: absolute;
@@ -66,138 +98,6 @@
         height: 14px;
         animation: fall linear infinite;
         opacity: 0.85;
-    }
-
-    .coin1 {
-        left: 5%;
-        animation-duration: 4s;
-    }
-
-    .coin2 {
-        left: 12%;
-        animation-duration: 5s;
-    }
-
-    .coin3 {
-        left: 20%;
-        animation-duration: 3.5s;
-    }
-
-    .coin4 {
-        left: 28%;
-        animation-duration: 4.8s;
-    }
-
-    .coin5 {
-        left: 36%;
-        animation-duration: 5.5s;
-    }
-
-    .coin6 {
-        left: 44%;
-        animation-duration: 4.2s;
-    }
-
-    .coin7 {
-        left: 52%;
-        animation-duration: 3.8s;
-    }
-
-    .coin8 {
-        left: 60%;
-        animation-duration: 5.2s;
-    }
-
-    .coin9 {
-        left: 68%;
-        animation-duration: 4.4s;
-    }
-
-    .coin10 {
-        left: 76%;
-        animation-duration: 3.9s;
-    }
-
-    .coin11 {
-        left: 84%;
-        animation-duration: 5.1s;
-    }
-
-    .coin12 {
-        left: 92%;
-        animation-duration: 4.3s;
-    }
-
-    .confetti1 {
-        left: 8%;
-        background-color: red;
-        animation-duration: 3s;
-    }
-
-    .confetti2 {
-        left: 16%;
-        background-color: blue;
-        animation-duration: 4s;
-    }
-
-    .confetti3 {
-        left: 24%;
-        background-color: green;
-        animation-duration: 3.5s;
-    }
-
-    .confetti4 {
-        left: 32%;
-        background-color: orange;
-        animation-duration: 4.5s;
-    }
-
-    .confetti5 {
-        left: 40%;
-        background-color: purple;
-        animation-duration: 3.8s;
-    }
-
-    .confetti6 {
-        left: 48%;
-        background-color: hotpink;
-        animation-duration: 4.2s;
-    }
-
-    .confetti7 {
-        left: 56%;
-        background-color: gold;
-        animation-duration: 3.4s;
-    }
-
-    .confetti8 {
-        left: 64%;
-        background-color: cyan;
-        animation-duration: 4.7s;
-    }
-
-    .confetti9 {
-        left: 72%;
-        background-color: lime;
-        animation-duration: 3.9s;
-    }
-
-    .confetti10 {
-        left: 80%;
-        background-color: tomato;
-        animation-duration: 4.1s;
-    }
-
-    .confetti11 {
-        left: 88%;
-        background-color: violet;
-        animation-duration: 3.6s;
-    }
-
-    .confetti12 {
-        left: 96%;
-        background-color: dodgerblue;
-        animation-duration: 4.4s;
     }
 
     @@keyframes fall {
@@ -246,5 +146,17 @@
         Winning Score: @ViewBag.Score
     </div>
 
+    @* Milestone 3: Show the player a little extra game info in a simple way. *@
+    <div class="details-box">
+        Time: @ViewBag.Time seconds <br />
+        Board Size: @ViewBag.BoardSize <br />
+        Difficulty: @ViewBag.Difficulty
+    </div>
+
     <p class="score-message">@ViewBag.ScoreMessage</p>
+
+    @* Milestone 3: Give the player an easy way to start another game. *@
+    <div>
+        <a href="/Game/StartGame" class="play-again-btn">Play Again</a>
+    </div>
 </div>

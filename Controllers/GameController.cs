@@ -11,13 +11,21 @@ namespace MinesweeperWebApp.Controllers
         // This gives us access to the score calculation logic.
         private readonly ScoreService _scoreService;
 
+        // Milestone 3:
+        // This gives us access to the game service so click logic can stay out of the controller
+        private readonly GameService _gameService;
+
         // This is used to randomly choose funny messages.
         private readonly Random _random = new Random();
 
         // Constructor to bring in the ScoreService.
-        public GameController(ScoreService scoreService)
+        public GameController(ScoreService scoreService, GameService gameService)
         {
             _scoreService = scoreService;
+
+            // Milestone 3:
+            // Save the game service so we can use it in the click action
+            _gameService = gameService;
         }
 
         // Default page for Game.
@@ -66,6 +74,10 @@ namespace MinesweeperWebApp.Controllers
             string boardJson = JsonSerializer.Serialize(board);
             HttpContext.Session.SetString("CurrentBoard", boardJson);
 
+            // Milestone 3:
+            // Save the game start time in a clean format so the timer can use it on the page
+            HttpContext.Session.SetString("StartTime", DateTime.UtcNow.ToString("O"));
+
             return RedirectToAction("LoadMineSweeperBoard");
         }
 
@@ -96,11 +108,16 @@ namespace MinesweeperWebApp.Controllers
             ViewBag.Score = board.Score;
             ViewBag.ShowLossDelay = TempData["ShowLossDelay"] as string;
 
+            // Milestone 3:
+            // Send the saved start time to the board view so the timer can run live on the page
+            ViewBag.StartTime = HttpContext.Session.GetString("StartTime");
+
             return View("MineSweeperBoard", board);
         }
 
+        // Milestone 3:
         // This method is called when the player clicks on a cell to reveal it.
-        [HttpPost]
+        // It now returns JSON so the board can update without reloading the whole page.
         [HttpPost]
         public IActionResult LeftClick(int row, int col)
         {
@@ -108,44 +125,140 @@ namespace MinesweeperWebApp.Controllers
 
             if (string.IsNullOrEmpty(boardJson))
             {
-                return RedirectToAction("StartGame");
+                return Json(new
+                {
+                    success = false,
+                    redirectUrl = Url.Action("StartGame", "Game")
+                });
             }
 
             Board board = JsonSerializer.Deserialize<Board>(boardJson);
 
-            board.RevealCell(row, col);
+            // Milestone 3:
+            // Get the start time from session so the service can calculate elapsed time
+            string startTimeString = HttpContext.Session.GetString("StartTime");
 
-            HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(board));
-            HttpContext.Session.SetInt32("CurrentScore", board.Score);
+            // Milestone 3:
+            // Send the board click to the game service so it can process the move
+            GameMoveResult result = _gameService.ProcessLeftClick(board, row, col, startTimeString);
 
-            if (board.IsGameOver)
+            // Milestone 3:
+            // Save the updated board and score back to session after the move
+            HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(result.UpdatedBoard));
+            HttpContext.Session.SetInt32("CurrentScore", result.Score);
+
+            return Json(new
             {
-                TempData["ShowLossDelay"] = "true";
-                return RedirectToAction("LoadMineSweeperBoard");
+                success = true,
+                row = row,
+                col = col,
+                imageUrl = result.ImageUrl,
+                score = result.Score,
+                time = result.Time,
+                isGameOver = result.IsGameOver,
+                isWin = result.IsWin,
+                changedCells = result.ChangedCells,
+                lossUrl = Url.Action("Loss", "Game"),
+                winUrl = Url.Action("Win", "Game")
+            });
+        }
+
+        // Milestone 3:
+        // This method handles right-clicking a cell to add or remove a flag
+        [HttpPost]
+        public IActionResult RightClick(int row, int col)
+        {
+            string boardJson = HttpContext.Session.GetString("CurrentBoard");
+
+            if (string.IsNullOrEmpty(boardJson))
+            {
+                return Json(new
+                {
+                    success = false,
+                    redirectUrl = Url.Action("StartGame", "Game")
+                });
             }
 
-            if (board.IsWin)
-            {
-                return RedirectToAction("Win");
-            }
+            Board board = JsonSerializer.Deserialize<Board>(boardJson);
 
-            return RedirectToAction("LoadMineSweeperBoard");
+            // Milestone 3:
+            // Get the start time from session so the service can keep the timer updated
+            string startTimeString = HttpContext.Session.GetString("StartTime");
+
+            // Milestone 3:
+            // Send the right-click action to the game service
+            GameMoveResult result = _gameService.ProcessRightClick(board, row, col, startTimeString);
+
+            // Milestone 3:
+            // Save the updated board after the flag is changed
+            HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(result.UpdatedBoard));
+
+            return Json(new
+            {
+                success = true,
+                row = row,
+                col = col,
+                imageUrl = result.ImageUrl,
+                score = result.Score,
+                time = result.Time,
+                isFlagged = result.IsFlagged,
+                isWin = result.IsWin
+            });
         }
 
         // This page is shown when the player wins the game.
         public IActionResult Win()
         {
-            // These are placeholder values for now.
-            // Later we will replace these with real game data.
-            int elapsedSeconds = 30;
-            int boardSize = 8;
-            int difficulty = 2;
+            // Milestone 3:
+            // Get the board size from session
+            int boardSize = HttpContext.Session.GetInt32("BoardSize") ?? 8;
 
-            // Calculate the score using the service.
+            // Milestone 3:
+            // Get the difficulty from session and convert it to a number
+            string difficultyString = HttpContext.Session.GetString("Difficulty") ?? "Easy";
+
+            int difficulty = 1;
+
+            if (difficultyString == "Easy")
+            {
+                difficulty = 1;
+            }
+            else if (difficultyString == "Medium")
+            {
+                difficulty = 2;
+            }
+            else if (difficultyString == "Hard")
+            {
+                difficulty = 3;
+            }
+
+            // Milestone 3:
+            // Get the start time from session
+            string startTimeString = HttpContext.Session.GetString("StartTime");
+
+            int elapsedSeconds = 0;
+
+            if (!string.IsNullOrEmpty(startTimeString))
+            {
+                DateTime startTime = DateTime.Parse(startTimeString, null, System.Globalization.DateTimeStyles.RoundtripKind);
+
+                TimeSpan elapsedTime = DateTime.UtcNow - startTime;
+
+                elapsedSeconds = (int)elapsedTime.TotalSeconds;
+            }
+
+            // Milestone 3:
+            // Calculate the final score using real game data
             int score = _scoreService.CalculateScore(elapsedSeconds, boardSize, difficulty);
 
             // Send the score to the view so it can be displayed.
             ViewBag.Score = score;
+
+            // Milestone 3:
+            // Send extra info to the view so we can display how the score was calculated
+            ViewBag.Time = elapsedSeconds;
+            ViewBag.BoardSize = boardSize;
+            ViewBag.Difficulty = difficultyString;
 
             // Send random funny messages to the page.
             ViewBag.WinMessage = GetRandomWinMessage();
