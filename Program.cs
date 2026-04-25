@@ -23,6 +23,10 @@ namespace MinesweeperWebApp
             // Add the score service so it can be used in the controller.
             builder.Services.AddScoped<ScoreService>();
 
+            // Milestone 3:
+            // Add the game service so the board click logic can be handled outside the controller
+            builder.Services.AddScoped<GameService>();
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

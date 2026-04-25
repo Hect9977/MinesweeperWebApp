@@ -71,7 +71,8 @@
             CheckForWin();
             return true;
         }
-        // Method to toggle a flag on a cell
+
+        // Method to reveal surrounding blank cells
         private void FloodFillReveal(int row, int col)
         {
             for (int r = row - 1; r <= row + 1; r++)
@@ -104,7 +105,14 @@
             }
         }
 
-        // Method to toggle a flag on a cell
+        // Milestone 3:
+        // This lets the service check for a win after flag changes too
+        public void UpdateWinStatus()
+        {
+            CheckForWin();
+        }
+
+        // Method to check if the player has won
         private void CheckForWin()
         {
             for (int row = 0; row < Size; row++)
@@ -113,7 +121,9 @@
                 {
                     Cell cell = Cells[row][col];
 
-                    if (!cell.HasMine && !cell.IsVisited)
+                    // Milestone 3:
+                    // The player wins when every cell has either been revealed or flagged
+                    if (!cell.IsVisited && !cell.IsFlagged)
                     {
                         return;
                     }
