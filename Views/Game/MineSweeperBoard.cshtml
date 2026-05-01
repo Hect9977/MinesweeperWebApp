@@ -21,6 +21,24 @@
         Score: <span id="gameScore">@ViewBag.Score</span>
     </div>
 
+    @*This section displays a success message if the game was saved successfully.*@
+    @if (TempData["SaveMessage"] != null)
+    {
+        <div class="alert alert-success mt-3">
+            @TempData["SaveMessage"]
+        </div>
+    }
+
+    <form asp-controller="Game" asp-action="SaveGame" method="post" class="mb-3">
+        <button type="submit" class="btn btn-primary">
+            Save Game
+        </button>
+    </form>
+
+    <a asp-controller="Game" asp-action="ShowSavedGames" class="btn btn-secondary mb-3">
+        Show Saved Games
+    </a>
+
     @* This builds the game board using the size of the board model. *@
     <div class="board-grid" style="grid-template-columns: repeat(@Model.Size, 60px);">
         @for (int row = 0; row < Model.Size; row++)

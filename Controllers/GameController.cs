@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Mvc;
 using MinesweeperWebApp.Services;
 using System.Text.Json;
 using MinesweeperWebApp.Models;
+using MinesweeperWeb.Data;
+using MinesweeperWeb.Models;
+using System.Linq;
 
 namespace MinesweeperWebApp.Controllers
 {
@@ -15,17 +18,25 @@ namespace MinesweeperWebApp.Controllers
         // This gives us access to the game service so click logic can stay out of the controller
         private readonly GameService _gameService;
 
+        // Milestone 4 Part 1:
+        // This gives us access to the database so we can save games.
+        private readonly ApplicationDbContext _context;
+
         // This is used to randomly choose funny messages.
         private readonly Random _random = new Random();
 
         // Constructor to bring in the ScoreService.
-        public GameController(ScoreService scoreService, GameService gameService)
+        public GameController(ScoreService scoreService, GameService gameService, ApplicationDbContext context)
         {
             _scoreService = scoreService;
 
             // Milestone 3:
             // Save the game service so we can use it in the click action
             _gameService = gameService;
+
+            // Milestone 4:
+            // Save the database context so the current game can be saved.
+            _context = context;
         }
 
         // Default page for Game.
@@ -204,6 +215,156 @@ namespace MinesweeperWebApp.Controllers
                 isFlagged = result.IsFlagged,
                 isWin = result.IsWin
             });
+        }
+
+        // Milestone 4:
+        // Saves the current Minesweeper game to the database as JSON.
+        [HttpPost]
+        public IActionResult SaveGame()
+        {
+            string loggedIn = HttpContext.Session.GetString("LoggedIn");
+            string username = HttpContext.Session.GetString("Username");
+            int? userId = HttpContext.Session.GetInt32("UserId");
+
+            if (loggedIn != "true" || string.IsNullOrEmpty(username) || userId == null)
+            {
+                TempData["Message"] = "You must be logged in before saving a game.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            string boardJson = HttpContext.Session.GetString("CurrentBoard");
+
+            if (string.IsNullOrEmpty(boardJson))
+            {
+                TempData["SaveMessage"] = "No active game was found to save.";
+                return RedirectToAction("StartGame", "Game");
+            }
+
+            int boardSize = HttpContext.Session.GetInt32("BoardSize") ?? 8;
+            string difficulty = HttpContext.Session.GetString("Difficulty") ?? "Easy";
+            string startTime = HttpContext.Session.GetString("StartTime") ?? DateTime.UtcNow.ToString("O");
+
+            // This object contains the board and extra game information.
+            var gameDataObject = new
+            {
+                UserId = userId.Value,
+                Username = username,
+                BoardSize = boardSize,
+                Difficulty = difficulty,
+                StartTime = startTime,
+                Board = JsonSerializer.Deserialize<Board>(boardJson)
+            };
+
+            string gameDataJson = JsonSerializer.Serialize(gameDataObject);
+
+            SavedGame savedGame = new SavedGame
+            {
+                UserId = userId.Value,
+                DateSaved = DateTime.Now,
+                Gamedata = gameDataJson
+            };
+
+            _context.Games.Add(savedGame);
+            _context.SaveChanges();
+
+            TempData["SaveMessage"] = "Game saved successfully!";
+
+            return RedirectToAction("LoadMineSweeperBoard");
+        }
+
+        // Milestone 4:
+        // Shows all saved games for the currently logged-in user.
+        public IActionResult ShowSavedGames()
+        {
+            string loggedIn = HttpContext.Session.GetString("LoggedIn");
+            int? userId = HttpContext.Session.GetInt32("UserId");
+
+            if (loggedIn != "true" || userId == null)
+            {
+                TempData["Message"] = "You must be logged in to view saved games.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            var savedGames = _context.Games
+                .Where(g => g.UserId == userId.Value)
+                .OrderByDescending(g => g.DateSaved)
+                .ToList();
+
+            return View(savedGames);
+        }
+
+        // Milestone 4:
+        // Loads one saved game and puts it back into session.
+        [HttpPost]
+        public IActionResult LoadSavedGame(int id)
+        {
+            string loggedIn = HttpContext.Session.GetString("LoggedIn");
+            string username = HttpContext.Session.GetString("Username");
+            int? userId = HttpContext.Session.GetInt32("UserId");
+
+            if (loggedIn != "true" || string.IsNullOrEmpty(username) || userId == null)
+            {
+                TempData["Message"] = "You must be logged in to load a saved game.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            SavedGame savedGame = _context.Games
+                .FirstOrDefault(g => g.Id == id && g.UserId == userId.Value);
+
+            if (savedGame == null)
+            {
+                TempData["SaveMessage"] = "Saved game was not found.";
+                return RedirectToAction("ShowSavedGames");
+            }
+
+            SavedGameData savedGameData = JsonSerializer.Deserialize<SavedGameData>(savedGame.Gamedata);
+
+            if (savedGameData == null || savedGameData.Board == null)
+            {
+                TempData["SaveMessage"] = "Saved game data could not be loaded.";
+                return RedirectToAction("ShowSavedGames");
+            }
+
+            HttpContext.Session.SetString("GameOwner", username);
+            HttpContext.Session.SetInt32("BoardSize", savedGameData.BoardSize);
+            HttpContext.Session.SetString("Difficulty", savedGameData.Difficulty);
+            HttpContext.Session.SetString("StartTime", savedGameData.StartTime);
+            HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(savedGameData.Board));
+
+            TempData["SaveMessage"] = "Saved game loaded successfully!";
+
+            return RedirectToAction("LoadMineSweeperBoard");
+        }
+
+        // Milestone 4:
+        // Deletes one saved game from the database.
+        [HttpPost]
+        public IActionResult DeleteSavedGame(int id)
+        {
+            string loggedIn = HttpContext.Session.GetString("LoggedIn");
+            int? userId = HttpContext.Session.GetInt32("UserId");
+
+            if (loggedIn != "true" || userId == null)
+            {
+                TempData["Message"] = "You must be logged in to delete a saved game.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            SavedGame savedGame = _context.Games
+                .FirstOrDefault(g => g.Id == id && g.UserId == userId.Value);
+
+            if (savedGame == null)
+            {
+                TempData["SaveMessage"] = "Saved game was not found.";
+                return RedirectToAction("ShowSavedGames");
+            }
+
+            _context.Games.Remove(savedGame);
+            _context.SaveChanges();
+
+            TempData["SaveMessage"] = "Saved game deleted successfully!";
+
+            return RedirectToAction("ShowSavedGames");
         }
 
         // This page is shown when the player wins the game.

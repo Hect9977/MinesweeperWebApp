@@ -53,6 +53,11 @@ namespace MinesweeperWeb.Controllers
             {
                 HttpContext.Session.SetString("Username", user.Username);
                 HttpContext.Session.SetString("LoggedIn", "true");
+
+                // Milestone 4 Part 1:
+                // Save the user's database ID so saved games can belong to this user.
+                HttpContext.Session.SetInt32("UserId", user.Id);
+
                 return RedirectToAction("LoginSuccess");
             }
 

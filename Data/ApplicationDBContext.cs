@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MinesweeperWeb.Models;
+using MinesweeperWebApp.Models;
 
 namespace MinesweeperWeb.Data
 {
@@ -11,5 +12,9 @@ namespace MinesweeperWeb.Data
         }
 
         public DbSet<User> Users { get; set; }
+
+        // Milestone 4 Part 1:
+        // This table stores saved Minesweeper games.
+        public DbSet<SavedGame> Games { get; set; }
     }
 }

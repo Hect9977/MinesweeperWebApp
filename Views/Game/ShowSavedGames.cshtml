@@ -1,0 +1,75 @@
+﻿@model List<MinesweeperWebApp.Models.SavedGame>
+
+@{
+    ViewData["Title"] = "Saved Games";
+}
+
+<h2>Saved Games</h2>
+
+<p>Select a saved game to continue playing, or delete a saved game you no longer need.</p>
+
+@if (TempData["SaveMessage"] != null)
+{
+    <div class="alert alert-info">
+        @TempData["SaveMessage"]
+    </div>
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="alert alert-warning">
+        You do not have any saved games yet.
+    </div>
+
+    <a asp-controller="Game" asp-action="StartGame" class="btn btn-primary">
+        Start New Game
+    </a>
+}
+else
+{
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>Game ID</th>
+                <th>Date Saved</th>
+                <th>User ID</th>
+                <th>Load</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            @foreach (var game in Model)
+            {
+                <tr>
+                    <td>@game.Id</td>
+                    <td>@game.DateSaved</td>
+                    <td>@game.UserId</td>
+
+                    <td>
+                        <form asp-controller="Game" asp-action="LoadSavedGame" method="post">
+                            <input type="hidden" name="id" value="@game.Id" />
+                            <button type="submit" class="btn btn-success">
+                                Load
+                            </button>
+                        </form>
+                    </td>
+
+                    <td>
+                        <form asp-controller="Game" asp-action="DeleteSavedGame" method="post"
+                              onsubmit="return confirm('Are you sure you want to delete this saved game?');">
+                            <input type="hidden" name="id" value="@game.Id" />
+                            <button type="submit" class="btn btn-danger">
+                                Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-controller="Game" asp-action="StartGame" class="btn btn-secondary">
+    Back to Start Game
+</a>
