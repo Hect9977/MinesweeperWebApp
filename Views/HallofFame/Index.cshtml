@@ -1,4 +1,6 @@
-﻿@{
+﻿@model List<MinesweeperWebApp.Models.HallOfFameScore>
+
+@{
     ViewData["Title"] = "Hall Of Fame";
 }
 
@@ -21,29 +23,105 @@
 
     .hof-box {
         margin: 0 auto;
-        max-width: 600px;
+        max-width: 950px;
         padding: 25px;
         border: 2px solid gold;
         border-radius: 12px;
         background-color: rgba(255,255,255,0.05);
-        font-size: 1.2rem;
+        font-size: 1.1rem;
     }
 
-    .hof-placeholder {
-        margin-top: 15px;
+    .hof-table {
+        width: 100%;
+        margin-top: 20px;
+        border-collapse: collapse;
+        color: white;
+    }
+
+        .hof-table th,
+        .hof-table td {
+            border: 1px solid gold;
+            padding: 12px;
+        }
+
+        .hof-table th {
+            background-color: rgba(255, 215, 0, 0.2);
+            color: gold;
+        }
+
+        .hof-table tr:nth-child(even) {
+            background-color: rgba(255,255,255,0.05);
+        }
+
+    .empty-message {
+        margin-top: 20px;
         font-style: italic;
         color: #ccc;
     }
 </style>
 
 <div class="hof-page">
+
     <h2 class="hof-title">🏆 HALL OF FAME 🏆</h2>
 
     <div class="hof-box">
-        <p>Top players and scores will be displayed here.</p>
 
-        <p class="hof-placeholder">
-            Future update: Save scores based on time, board size, games played, and difficulty.
-        </p>
+        @* Milestone 4:
+           Show a message if no winning scores have been saved yet. *@
+        @if (Model == null || Model.Count == 0)
+        {
+            <p class="empty-message">
+                No winning scores have been saved yet.
+            </p>
+        }
+        else
+        {
+            <p>
+                Top winning players and scores.
+            </p>
+
+            @* Milestone 4:
+               Display the saved winning scores from the database. *@
+            <table class="hof-table">
+
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Score</th>
+                        <th>Difficulty</th>
+                        <th>Board Size</th>
+                        <th>Time</th>
+                        <th>Date Won</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @{
+                        int rank = 1;
+                    }
+
+                    @foreach (var score in Model)
+                    {
+                        <tr>
+                            <td>@rank</td>
+                            <td>@score.Username</td>
+                            <td>@score.Score</td>
+                            <td>@score.Difficulty</td>
+                            <td>@score.BoardSize x @score.BoardSize</td>
+                            <td>@score.TimeSeconds seconds</td>
+                            <td>@score.DateWon.ToString("MM/dd/yyyy hh:mm tt")</td>
+                        </tr>
+
+                        rank++;
+                    }
+
+                </tbody>
+
+            </table>
+        }
+
     </div>
+
 </div>

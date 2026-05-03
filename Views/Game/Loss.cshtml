@@ -35,6 +35,54 @@
         z-index: 2;
     }
 
+    .score-box {
+        display: inline-block;
+        background-color: white;
+        border: 3px solid #ff4d4d;
+        border-radius: 15px;
+        padding: 20px 30px;
+        margin-top: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: #4b0000;
+        position: relative;
+        z-index: 2;
+    }
+
+    .details-box {
+        display: inline-block;
+        background-color: white;
+        border: 2px solid #ff4d4d;
+        border-radius: 15px;
+        padding: 15px 25px;
+        margin-top: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+        font-size: 1.05rem;
+        color: #4b0000;
+        position: relative;
+        z-index: 2;
+        line-height: 1.8;
+    }
+
+    .try-again-btn {
+        display: inline-block;
+        margin-top: 25px;
+        padding: 12px 24px;
+        background-color: #ff4d4d;
+        color: white;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 10px;
+        position: relative;
+        z-index: 2;
+    }
+
+        .try-again-btn:hover {
+            background-color: #cc3333;
+            color: white;
+        }
+
     .bomb {
         position: absolute;
         top: -60px;
@@ -132,5 +180,22 @@
 
     <div class="loss-message-box">
         <p>@ViewBag.LossMessage</p>
+    </div>
+
+    @* Show the final game score after the player hits a mine. *@
+    <div class="score-box">
+        Final Score: @ViewBag.Score
+    </div>
+
+    @* Show the same game details used on the Winner page. *@
+    <div class="details-box">
+        Time: @ViewBag.Time seconds <br />
+        Board Size: @ViewBag.BoardSize <br />
+        Difficulty: @ViewBag.Difficulty
+    </div>
+
+    @* Give the player a quick way to start over after losing. *@
+    <div>
+        <a href="/Game/StartGame" class="try-again-btn">Try Again</a>
     </div>
 </div>

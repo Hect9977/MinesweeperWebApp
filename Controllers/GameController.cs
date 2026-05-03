@@ -4,54 +4,43 @@ using MinesweeperWebApp.Services;
 using System.Text.Json;
 using MinesweeperWebApp.Models;
 using MinesweeperWeb.Data;
-using MinesweeperWeb.Models;
 using System.Linq;
 
 namespace MinesweeperWebApp.Controllers
 {
     public class GameController : Controller
     {
-        // This gives us access to the score calculation logic.
+        // Gives this controller access to the score calculation logic.
         private readonly ScoreService _scoreService;
 
-        // Milestone 3:
-        // This gives us access to the game service so click logic can stay out of the controller
+        // Gives this controller access to the game click logic.
         private readonly GameService _gameService;
 
-        // Milestone 4 Part 1:
-        // This gives us access to the database so we can save games.
+        // Gives this controller access to the database.
         private readonly ApplicationDbContext _context;
 
-        // This is used to randomly choose funny messages.
+        // Used to randomly pick win, loss, and score messages.
         private readonly Random _random = new Random();
 
-        // Constructor to bring in the ScoreService.
+        // Brings in the services this controller needs.
         public GameController(ScoreService scoreService, GameService gameService, ApplicationDbContext context)
         {
             _scoreService = scoreService;
-
-            // Milestone 3:
-            // Save the game service so we can use it in the click action
             _gameService = gameService;
-
-            // Milestone 4:
-            // Save the database context so the current game can be saved.
             _context = context;
         }
 
-        // Default page for Game.
+        // Opens the default Game page if it is ever needed.
         public IActionResult Index()
         {
             return View();
         }
 
-        // This page is where the user starts a game.
-        // We check if they are logged in before letting them continue.
+        // Opens the Start Game page after checking that the player is logged in.
         public IActionResult StartGame()
         {
             string loggedIn = HttpContext.Session.GetString("LoggedIn");
 
-            // If the user is not logged in, send them back to login.
             if (loggedIn != "true")
             {
                 TempData["Message"] = "You must log in before starting a new game.";
@@ -61,9 +50,7 @@ namespace MinesweeperWebApp.Controllers
             return View();
         }
 
-        // From Hector:
-        // Update: This version of the method saves the game settings and board to session, then redirects to a new action that loads the board page.
-        // This way we can ensure only the player who started the game can access the board.
+        // Starts a new game by saving the game settings and board into session.
         [HttpPost]
         public IActionResult MineSweeperBoard(int boardSize, string difficulty)
         {
@@ -80,19 +67,26 @@ namespace MinesweeperWebApp.Controllers
             HttpContext.Session.SetInt32("BoardSize", boardSize);
             HttpContext.Session.SetString("Difficulty", difficulty);
 
-            Board board = new Board(boardSize);
+            // Create the board using the selected difficulty so Hard mode can include the gold bag.
+            Board board = new Board(boardSize, difficulty);
 
             string boardJson = JsonSerializer.Serialize(board);
             HttpContext.Session.SetString("CurrentBoard", boardJson);
 
-            // Milestone 3:
-            // Save the game start time in a clean format so the timer can use it on the page
+            // Save the start time so the live timer can run on the board page.
             HttpContext.Session.SetString("StartTime", DateTime.UtcNow.ToString("O"));
+
+            // Clear old final results so the next game starts fresh.
+            HttpContext.Session.Remove("FinalScore");
+            HttpContext.Session.Remove("FinalTimeSeconds");
+            HttpContext.Session.Remove("FinalBoardSize");
+            HttpContext.Session.Remove("FinalDifficulty");
+            HttpContext.Session.Remove("HallOfFameScoreSaved");
 
             return RedirectToAction("LoadMineSweeperBoard");
         }
 
-        // Update: This new action loads the board page, but first checks if the user is logged in and is the owner of the game before allowing access.
+        // Loads the current board from session and sends it to the board page.
         public IActionResult LoadMineSweeperBoard()
         {
             string loggedIn = HttpContext.Session.GetString("LoggedIn");
@@ -109,6 +103,7 @@ namespace MinesweeperWebApp.Controllers
             string difficulty = HttpContext.Session.GetString("Difficulty") ?? "Easy";
 
             string boardJson = HttpContext.Session.GetString("CurrentBoard");
+
             Board board = string.IsNullOrEmpty(boardJson)
                 ? new Board(boardSize)
                 : JsonSerializer.Deserialize<Board>(boardJson);
@@ -118,17 +113,12 @@ namespace MinesweeperWebApp.Controllers
             ViewBag.GameOwner = username;
             ViewBag.Score = board.Score;
             ViewBag.ShowLossDelay = TempData["ShowLossDelay"] as string;
-
-            // Milestone 3:
-            // Send the saved start time to the board view so the timer can run live on the page
             ViewBag.StartTime = HttpContext.Session.GetString("StartTime");
 
             return View("MineSweeperBoard", board);
         }
 
-        // Milestone 3:
-        // This method is called when the player clicks on a cell to reveal it.
-        // It now returns JSON so the board can update without reloading the whole page.
+        // Handles a left-click on the board and returns the updated cell data as JSON.
         [HttpPost]
         public IActionResult LeftClick(int row, int col)
         {
@@ -144,17 +134,11 @@ namespace MinesweeperWebApp.Controllers
             }
 
             Board board = JsonSerializer.Deserialize<Board>(boardJson);
-
-            // Milestone 3:
-            // Get the start time from session so the service can calculate elapsed time
             string startTimeString = HttpContext.Session.GetString("StartTime");
 
-            // Milestone 3:
-            // Send the board click to the game service so it can process the move
             GameMoveResult result = _gameService.ProcessLeftClick(board, row, col, startTimeString);
 
-            // Milestone 3:
-            // Save the updated board and score back to session after the move
+            // Save the updated board and score after the player makes a move.
             HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(result.UpdatedBoard));
             HttpContext.Session.SetInt32("CurrentScore", result.Score);
 
@@ -168,14 +152,15 @@ namespace MinesweeperWebApp.Controllers
                 time = result.Time,
                 isGameOver = result.IsGameOver,
                 isWin = result.IsWin,
+                foundGoldBag = result.FoundGoldBag,
+                goldMessage = result.GoldMessage,
                 changedCells = result.ChangedCells,
                 lossUrl = Url.Action("Loss", "Game"),
                 winUrl = Url.Action("Win", "Game")
             });
         }
 
-        // Milestone 3:
-        // This method handles right-clicking a cell to add or remove a flag
+        // Handles a right-click on the board so the player can place or remove a flag.
         [HttpPost]
         public IActionResult RightClick(int row, int col)
         {
@@ -191,17 +176,11 @@ namespace MinesweeperWebApp.Controllers
             }
 
             Board board = JsonSerializer.Deserialize<Board>(boardJson);
-
-            // Milestone 3:
-            // Get the start time from session so the service can keep the timer updated
             string startTimeString = HttpContext.Session.GetString("StartTime");
 
-            // Milestone 3:
-            // Send the right-click action to the game service
             GameMoveResult result = _gameService.ProcessRightClick(board, row, col, startTimeString);
 
-            // Milestone 3:
-            // Save the updated board after the flag is changed
+            // Save the board after the flag state changes.
             HttpContext.Session.SetString("CurrentBoard", JsonSerializer.Serialize(result.UpdatedBoard));
 
             return Json(new
@@ -217,8 +196,7 @@ namespace MinesweeperWebApp.Controllers
             });
         }
 
-        // Milestone 4:
-        // Saves the current Minesweeper game to the database as JSON.
+        // Saves the current game to the database as JSON.
         [HttpPost]
         public IActionResult SaveGame()
         {
@@ -244,7 +222,7 @@ namespace MinesweeperWebApp.Controllers
             string difficulty = HttpContext.Session.GetString("Difficulty") ?? "Easy";
             string startTime = HttpContext.Session.GetString("StartTime") ?? DateTime.UtcNow.ToString("O");
 
-            // This object contains the board and extra game information.
+            // Build one object that keeps all saved game details together.
             var gameDataObject = new
             {
                 UserId = userId.Value,
@@ -272,8 +250,7 @@ namespace MinesweeperWebApp.Controllers
             return RedirectToAction("LoadMineSweeperBoard");
         }
 
-        // Milestone 4:
-        // Shows all saved games for the currently logged-in user.
+        // Shows all saved games for the logged-in player.
         public IActionResult ShowSavedGames()
         {
             string loggedIn = HttpContext.Session.GetString("LoggedIn");
@@ -293,8 +270,7 @@ namespace MinesweeperWebApp.Controllers
             return View(savedGames);
         }
 
-        // Milestone 4:
-        // Loads one saved game and puts it back into session.
+        // Loads a selected saved game and puts that game back into session.
         [HttpPost]
         public IActionResult LoadSavedGame(int id)
         {
@@ -336,8 +312,7 @@ namespace MinesweeperWebApp.Controllers
             return RedirectToAction("LoadMineSweeperBoard");
         }
 
-        // Milestone 4:
-        // Deletes one saved game from the database.
+        // Deletes a selected saved game from the database.
         [HttpPost]
         public IActionResult DeleteSavedGame(int id)
         {
@@ -367,77 +342,163 @@ namespace MinesweeperWebApp.Controllers
             return RedirectToAction("ShowSavedGames");
         }
 
-        // This page is shown when the player wins the game.
+        // Shows the Winner page and keeps the final score details locked in.
         public IActionResult Win()
         {
-            // Milestone 3:
-            // Get the board size from session
-            int boardSize = HttpContext.Session.GetInt32("BoardSize") ?? 8;
+            int? savedFinalScore = HttpContext.Session.GetInt32("FinalScore");
+            int? savedFinalTime = HttpContext.Session.GetInt32("FinalTimeSeconds");
+            int? savedFinalBoardSize = HttpContext.Session.GetInt32("FinalBoardSize");
+            string savedFinalDifficulty = HttpContext.Session.GetString("FinalDifficulty");
 
-            // Milestone 3:
-            // Get the difficulty from session and convert it to a number
-            string difficultyString = HttpContext.Session.GetString("Difficulty") ?? "Easy";
+            int score;
+            int elapsedSeconds;
+            int boardSize;
+            string difficultyString;
 
-            int difficulty = 1;
-
-            if (difficultyString == "Easy")
+            // Use the same final results if the Winner page reloads.
+            if (savedFinalScore != null &&
+                savedFinalTime != null &&
+                savedFinalBoardSize != null &&
+                !string.IsNullOrEmpty(savedFinalDifficulty))
             {
-                difficulty = 1;
+                score = savedFinalScore.Value;
+                elapsedSeconds = savedFinalTime.Value;
+                boardSize = savedFinalBoardSize.Value;
+                difficultyString = savedFinalDifficulty;
             }
-            else if (difficultyString == "Medium")
+            else
             {
-                difficulty = 2;
-            }
-            else if (difficultyString == "Hard")
-            {
-                difficulty = 3;
-            }
+                boardSize = HttpContext.Session.GetInt32("BoardSize") ?? 8;
+                difficultyString = HttpContext.Session.GetString("Difficulty") ?? "Easy";
 
-            // Milestone 3:
-            // Get the start time from session
-            string startTimeString = HttpContext.Session.GetString("StartTime");
+                int difficulty = GetDifficultyValue(difficultyString);
+                elapsedSeconds = GetElapsedSeconds();
 
-            int elapsedSeconds = 0;
+                score = _scoreService.CalculateScore(elapsedSeconds, boardSize, difficulty);
 
-            if (!string.IsNullOrEmpty(startTimeString))
-            {
-                DateTime startTime = DateTime.Parse(startTimeString, null, System.Globalization.DateTimeStyles.RoundtripKind);
-
-                TimeSpan elapsedTime = DateTime.UtcNow - startTime;
-
-                elapsedSeconds = (int)elapsedTime.TotalSeconds;
+                // Save the final results one time so the Winner page and Hall Of Fame match.
+                HttpContext.Session.SetInt32("FinalScore", score);
+                HttpContext.Session.SetInt32("FinalTimeSeconds", elapsedSeconds);
+                HttpContext.Session.SetInt32("FinalBoardSize", boardSize);
+                HttpContext.Session.SetString("FinalDifficulty", difficultyString);
             }
 
-            // Milestone 3:
-            // Calculate the final score using real game data
-            int score = _scoreService.CalculateScore(elapsedSeconds, boardSize, difficulty);
-
-            // Send the score to the view so it can be displayed.
             ViewBag.Score = score;
-
-            // Milestone 3:
-            // Send extra info to the view so we can display how the score was calculated
             ViewBag.Time = elapsedSeconds;
             ViewBag.BoardSize = boardSize;
             ViewBag.Difficulty = difficultyString;
+            ViewBag.GameOwner = HttpContext.Session.GetString("Username");
 
-            // Send random funny messages to the page.
             ViewBag.WinMessage = GetRandomWinMessage();
             ViewBag.ScoreMessage = GetRandomScoreMessage();
 
             return View();
         }
 
-        // This page is shown when the player loses the game.
+        // Saves the winning score to the Hall Of Fame table using the player's chosen display name.
+        [HttpPost]
+        public IActionResult SaveHallOfFameScore(string displayName)
+        {
+            string loggedIn = HttpContext.Session.GetString("LoggedIn");
+            int? userId = HttpContext.Session.GetInt32("UserId");
+            string scoreSaved = HttpContext.Session.GetString("HallOfFameScoreSaved");
+
+            if (loggedIn != "true" || userId == null)
+            {
+                TempData["Message"] = "You must be logged in to save a Hall Of Fame score.";
+                return RedirectToAction("Login", "Account");
+            }
+
+            if (scoreSaved == "true")
+            {
+                TempData["HallOfFameMessage"] = "This score has already been saved.";
+                return RedirectToAction("Win");
+            }
+
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                TempData["HallOfFameMessage"] = "Please enter a name before saving your score.";
+                return RedirectToAction("Win");
+            }
+
+            int score = HttpContext.Session.GetInt32("FinalScore") ?? 0;
+            int timeSeconds = HttpContext.Session.GetInt32("FinalTimeSeconds") ?? 0;
+            int boardSize = HttpContext.Session.GetInt32("FinalBoardSize") ?? 8;
+            string difficulty = HttpContext.Session.GetString("FinalDifficulty") ?? "Easy";
+
+            HallOfFameScore hallOfFameScore = new HallOfFameScore
+            {
+                UserId = userId.Value,
+                Username = displayName.Trim(),
+                Score = score,
+                BoardSize = boardSize,
+                Difficulty = difficulty,
+                TimeSeconds = timeSeconds,
+                DateWon = DateTime.Now
+            };
+
+            _context.HallOfFameScores.Add(hallOfFameScore);
+            _context.SaveChanges();
+
+            HttpContext.Session.SetString("HallOfFameScoreSaved", "true");
+            TempData["HallOfFameMessage"] = "Score saved to Hall Of Fame!";
+
+            return RedirectToAction("Win");
+        }
+
+        // Shows the Game Over page with the final game details.
         public IActionResult Loss()
         {
-            // Send a random funny loss message to the page.
+            int boardSize = HttpContext.Session.GetInt32("BoardSize") ?? 8;
+            string difficultyString = HttpContext.Session.GetString("Difficulty") ?? "Easy";
+            int difficulty = GetDifficultyValue(difficultyString);
+            int elapsedSeconds = GetElapsedSeconds();
+
+            int score = HttpContext.Session.GetInt32("CurrentScore")
+                ?? _scoreService.CalculateScore(elapsedSeconds, boardSize, difficulty);
+
+            ViewBag.Score = score;
+            ViewBag.Time = elapsedSeconds;
+            ViewBag.BoardSize = boardSize;
+            ViewBag.Difficulty = difficultyString;
             ViewBag.LossMessage = GetRandomLossMessage();
 
             return View();
         }
 
-        // Picks one random win message.
+        // Converts the difficulty word into the number used for scoring.
+        private int GetDifficultyValue(string difficultyString)
+        {
+            if (difficultyString == "Medium")
+            {
+                return 2;
+            }
+
+            if (difficultyString == "Hard")
+            {
+                return 3;
+            }
+
+            return 1;
+        }
+
+        // Calculates how many seconds the player spent in the current game.
+        private int GetElapsedSeconds()
+        {
+            string startTimeString = HttpContext.Session.GetString("StartTime");
+
+            if (string.IsNullOrEmpty(startTimeString))
+            {
+                return 0;
+            }
+
+            DateTime startTime = DateTime.Parse(startTimeString, null, System.Globalization.DateTimeStyles.RoundtripKind);
+            TimeSpan elapsedTime = DateTime.UtcNow - startTime;
+
+            return (int)elapsedTime.TotalSeconds;
+        }
+
+        // Picks one random win message for the Winner page.
         private string GetRandomWinMessage()
         {
             string[] messages =
@@ -453,7 +514,7 @@ namespace MinesweeperWebApp.Controllers
             return messages[_random.Next(messages.Length)];
         }
 
-        // Picks one random loss message.
+        // Picks one random loss message for the Game Over page.
         private string GetRandomLossMessage()
         {
             string[] messages =
@@ -469,7 +530,7 @@ namespace MinesweeperWebApp.Controllers
             return messages[_random.Next(messages.Length)];
         }
 
-        // Picks one random score message.
+        // Picks one random score message for the Winner page.
         private string GetRandomScoreMessage()
         {
             string[] messages =
@@ -480,6 +541,66 @@ namespace MinesweeperWebApp.Controllers
                 "That number is looking pretty nice up there.",
                 "Respect. That score did not come easy.",
                 "That is a run it back and beat it kind of score."
+            };
+
+            return messages[_random.Next(messages.Length)];
+        }
+
+        // Collects visible cells after the gold bag test button is used.
+        private List<ChangedCell> GetVisibleCellsForTest(Board board)
+        {
+            List<ChangedCell> changedCells = new List<ChangedCell>();
+
+            for (int row = 0; row < board.Size; row++)
+            {
+                for (int col = 0; col < board.Size; col++)
+                {
+                    Cell cell = board.Cells[row][col];
+
+                    if (cell.IsVisited || cell.IsFlagged)
+                    {
+                        string imageUrl = "/img/revealed.png";
+
+                        if (cell.IsFlagged)
+                        {
+                            imageUrl = "/img/flag.png";
+                        }
+                        else if (cell.HasMine)
+                        {
+                            imageUrl = "/img/mine.png";
+                        }
+                        else if (cell.HasGoldBag)
+                        {
+                            imageUrl = "/img/Gold.png";
+                        }
+                        else if (cell.LiveNeighbors > 0)
+                        {
+                            imageUrl = $"/img/tile{cell.LiveNeighbors}.png";
+                        }
+
+                        changedCells.Add(new ChangedCell
+                        {
+                            Row = row,
+                            Col = col,
+                            ImageUrl = imageUrl,
+                            IsFlagged = cell.IsFlagged
+                        });
+                    }
+                }
+            }
+
+            return changedCells;
+        }
+
+        // Picks one random message when the gold bag is found.
+        private string GetRandomGoldMessage()
+        {
+            string[] messages =
+            {
+                "You found the gold bag. Look at you accidentally making good decisions.",
+                "Gold bag found. The mines are now financially embarrassed.",
+                "You found bonus gold. Try not to act brand new.",
+                "Well look at that. A good click finally showed up."
             };
 
             return messages[_random.Next(messages.Length)];

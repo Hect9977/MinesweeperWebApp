@@ -6,6 +6,56 @@
 
 <link rel="stylesheet" href="~/css/minesweeper.css" />
 
+<style>
+    .gold-sparkle {
+        position: relative;
+        animation: goldPop 0.8s ease-in-out;
+        box-shadow: 0 0 20px gold, 0 0 35px orange;
+        border-radius: 8px;
+    }
+
+        .gold-sparkle::after {
+            content: "✨";
+            position: absolute;
+            top: -18px;
+            right: -10px;
+            font-size: 1.8rem;
+            animation: sparkleFloat 1s ease-in-out;
+            pointer-events: none;
+        }
+
+    @@keyframes goldPop {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.2);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    @@keyframes sparkleFloat {
+        0% {
+            opacity: 0;
+            transform: translateY(10px) scale(0.7);
+        }
+
+        50% {
+            opacity: 1;
+            transform: translateY(-8px) scale(1.2);
+        }
+
+        100% {
+            opacity: 0;
+            transform: translateY(-20px) scale(1);
+        }
+    }
+</style>
+
 <div class="board-page">
     <h2 class="board-title">Minesweeper Board</h2>
 
@@ -21,7 +71,7 @@
         Score: <span id="gameScore">@ViewBag.Score</span>
     </div>
 
-    @*This section displays a success message if the game was saved successfully.*@
+    @* Show a message after the game is saved or loaded. *@
     @if (TempData["SaveMessage"] != null)
     {
         <div class="alert alert-success mt-3">
@@ -39,7 +89,7 @@
         Show Saved Games
     </a>
 
-    @* This builds the game board using the size of the board model. *@
+    @* Build the game board using the current board size. *@
     <div class="board-grid" style="grid-template-columns: repeat(@Model.Size, 60px);">
         @for (int row = 0; row < Model.Size; row++)
         {
@@ -47,15 +97,14 @@
             {
                 var cell = Model.Cells[row][col];
 
-                @* Each button stores its row and column so JavaScript knows which cell was clicked. *@
-                @* Milestone 3: Store the flag state on each button so left-click and right-click can work correctly. *@
+                @* Store row, column, and flag status so JavaScript knows what was clicked. *@
                 <button class="board-cell cell-button"
                         type="button"
                         data-row="@row"
                         data-col="@col"
                         data-flagged="@cell.IsFlagged.ToString().ToLower()">
 
-                    @* Milestone 3: Show the flag image first if the cell is currently flagged. *@
+                    @* Show the correct image based on the current cell state. *@
                     @if (cell.IsFlagged)
                     {
                         <img src="~/img/flag.png" alt="Flag Tile" class="tile-img" />
@@ -67,6 +116,10 @@
                     else if (cell.HasMine)
                     {
                         <img src="~/img/mine.png" alt="Mine Tile" class="tile-img" />
+                    }
+                    else if (cell.HasGoldBag)
+                    {
+                        <img src="~/img/Gold.png" alt="Gold Bag Tile" class="tile-img" />
                     }
                     else if (cell.LiveNeighbors > 0)
                     {
@@ -87,12 +140,10 @@
         const cellButtons = document.querySelectorAll(".cell-button");
         const timeBox = document.getElementById("gameTime");
 
-        // Milestone 3:
-        // Get the start time from the controller so the timer can keep running live
+        // Get the start time from the controller so the timer can keep running live.
         const startTimeString = "@ViewBag.StartTime";
 
-        // Milestone 3:
-        // This updates the timer on the page every second
+        // Updates the timer on the page every second.
         function updateLiveTimer() {
             if (!startTimeString || !timeBox) {
                 return;
@@ -109,13 +160,26 @@
             timeBox.textContent = `${minutes}:${seconds}`;
         }
 
-        // Milestone 3:
-        // Run the timer right away and keep it updating every second
+        // Start the timer right away and keep it moving.
         updateLiveTimer();
         setInterval(updateLiveTimer, 1000);
 
-        // Milestone 3:
-        // This updates every tile that changed after a move, including flood fill
+        // Adds a quick sparkle animation to the gold bag tile.
+        function showGoldSparkle(row, col) {
+            const button = document.querySelector(`.cell-button[data-row="${row}"][data-col="${col}"]`);
+
+            if (!button) {
+                return;
+            }
+
+            button.classList.add("gold-sparkle");
+
+            setTimeout(function () {
+                button.classList.remove("gold-sparkle");
+            }, 1000);
+        }
+
+        // Updates every tile that changed after a move.
         function updateChangedCells(changedCells) {
             if (!changedCells) {
                 return;
@@ -132,11 +196,19 @@
             });
         }
 
+        // Updates the score box after a move or test action.
+        function updateScore(score) {
+            const scoreBox = document.getElementById("gameScore");
+
+            if (scoreBox) {
+                scoreBox.textContent = score;
+            }
+        }
+
         cellButtons.forEach(function (button) {
             button.addEventListener("click", function () {
 
-                // Milestone 3:
-                // Do not left-click a cell that is currently flagged
+                // Do not left-click a cell that is currently flagged.
                 if (this.dataset.flagged === "true") {
                     return;
                 }
@@ -157,16 +229,21 @@
                         if (data.redirectUrl) {
                             window.location.href = data.redirectUrl;
                         }
+
                         return;
                     }
 
-                    // Milestone 3:
-                    // Update every changed tile after the move so flood fill shows correctly
+                    // Update every changed tile after the move.
                     updateChangedCells(data.changedCells);
+                    updateScore(data.score);
 
-                    const scoreBox = document.getElementById("gameScore");
-                    if (scoreBox) {
-                        scoreBox.textContent = data.score;
+                    // Show a sparkle and message when the gold bag is found.
+                    if (data.foundGoldBag) {
+                        showGoldSparkle(row, col);
+
+                        setTimeout(function () {
+                            alert(data.goldMessage);
+                        }, 250);
                     }
 
                     if (timeBox) {
@@ -188,8 +265,7 @@
                 });
             });
 
-            // Milestone 3:
-            // Handle right-click so the player can place or remove a flag
+            // Handle right-click so the player can place or remove a flag.
             button.addEventListener("contextmenu", function (event) {
                 event.preventDefault();
 
@@ -210,27 +286,22 @@
                         if (data.redirectUrl) {
                             window.location.href = data.redirectUrl;
                         }
+
                         return;
                     }
 
                     const image = clickedButton.querySelector("img");
                     image.src = data.imageUrl;
 
-                    // Milestone 3:
-                    // Save the flag state on the button so left-click knows when to stop
+                    // Save the flag state on the button so left-click knows when to stop.
                     clickedButton.dataset.flagged = data.isFlagged ? "true" : "false";
 
-                    const scoreBox = document.getElementById("gameScore");
-                    if (scoreBox) {
-                        scoreBox.textContent = data.score;
-                    }
+                    updateScore(data.score);
 
                     if (timeBox) {
                         timeBox.textContent = data.time;
                     }
 
-                    // Milestone 3:
-                    // If the board is fully completed after placing or removing a flag, go to the win page
                     if (data.isWin) {
                         window.location.href = '/Game/Win';
                     }

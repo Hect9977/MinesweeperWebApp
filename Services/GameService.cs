@@ -2,18 +2,17 @@
 
 namespace MinesweeperWebApp.Services
 {
-    // Milestone 3:
-    // This service handles board click logic so the controller does not have to do all the work
+    // Handles board click logic so the controller can stay cleaner.
     public class GameService
     {
-        // Milestone 3:
-        // This method reveals the clicked cell and builds the result we need for the page update
+        private readonly Random _random = new Random();
+
+        // Reveals the clicked cell and builds the result used to update the page.
         public GameMoveResult ProcessLeftClick(Board board, int row, int col, string startTimeString)
         {
             Cell cell = board.Cells[row][col];
 
-            // Milestone 3:
-            // Do not reveal a flagged cell when the player left-clicks it
+            // Do not reveal a flagged cell when the player left-clicks it.
             if (cell.IsFlagged)
             {
                 return new GameMoveResult
@@ -24,6 +23,8 @@ namespace MinesweeperWebApp.Services
                     IsGameOver = board.IsGameOver,
                     IsWin = board.IsWin,
                     IsFlagged = true,
+                    FoundGoldBag = false,
+                    GoldMessage = "",
                     ChangedCells = new List<ChangedCell>
                     {
                         new ChangedCell
@@ -38,7 +39,7 @@ namespace MinesweeperWebApp.Services
                 };
             }
 
-            // Reveal the selected cell
+            // Reveal the selected cell.
             board.RevealCell(row, col);
 
             return new GameMoveResult
@@ -49,19 +50,19 @@ namespace MinesweeperWebApp.Services
                 IsGameOver = board.IsGameOver,
                 IsWin = board.IsWin,
                 IsFlagged = board.Cells[row][col].IsFlagged,
+                FoundGoldBag = board.GoldBagFoundThisMove,
+                GoldMessage = board.GoldBagFoundThisMove ? GetRandomGoldMessage() : "",
                 ChangedCells = GetChangedCells(board),
                 UpdatedBoard = board
             };
         }
 
-        // Milestone 3:
-        // This method adds or removes a flag from the selected cell
+        // Adds or removes a flag from the selected cell.
         public GameMoveResult ProcessRightClick(Board board, int row, int col, string startTimeString)
         {
             Cell cell = board.Cells[row][col];
 
-            // Milestone 3:
-            // Do not allow flags on cells that are already revealed
+            // Do not allow flags on cells that are already revealed.
             if (cell.IsVisited)
             {
                 return new GameMoveResult
@@ -72,6 +73,8 @@ namespace MinesweeperWebApp.Services
                     IsGameOver = board.IsGameOver,
                     IsWin = board.IsWin,
                     IsFlagged = cell.IsFlagged,
+                    FoundGoldBag = false,
+                    GoldMessage = "",
                     ChangedCells = new List<ChangedCell>
                     {
                         new ChangedCell
@@ -86,12 +89,10 @@ namespace MinesweeperWebApp.Services
                 };
             }
 
-            // Milestone 3:
-            // Switch the flag on or off when the player right-clicks
+            // Switch the flag on or off when the player right-clicks.
             cell.IsFlagged = !cell.IsFlagged;
 
-            // Milestone 3:
-            // Check if the board is now complete after the flag change
+            // Check if the board is complete after the flag change.
             board.UpdateWinStatus();
 
             return new GameMoveResult
@@ -102,6 +103,8 @@ namespace MinesweeperWebApp.Services
                 IsGameOver = board.IsGameOver,
                 IsWin = board.IsWin,
                 IsFlagged = cell.IsFlagged,
+                FoundGoldBag = false,
+                GoldMessage = "",
                 ChangedCells = new List<ChangedCell>
                 {
                     new ChangedCell
@@ -116,8 +119,7 @@ namespace MinesweeperWebApp.Services
             };
         }
 
-        // Milestone 3:
-        // This helper method collects every cell that should now be visible on the page
+        // Collects every cell that should now be visible on the page.
         private List<ChangedCell> GetChangedCells(Board board)
         {
             List<ChangedCell> changedCells = new List<ChangedCell>();
@@ -144,48 +146,62 @@ namespace MinesweeperWebApp.Services
             return changedCells;
         }
 
-        // Milestone 3:
-        // This helper method returns the correct image for a cell
+        // Returns the correct image for a cell.
         private string GetImageUrl(Cell cell)
         {
             if (cell.IsFlagged)
             {
                 return "/img/flag.png";
             }
-            else if (!cell.IsVisited)
+
+            if (!cell.IsVisited)
             {
                 return "/img/hidden.png";
             }
-            else if (cell.HasMine)
+
+            if (cell.HasMine)
             {
                 return "/img/mine.png";
             }
-            else if (cell.LiveNeighbors > 0)
+
+            if (cell.HasGoldBag)
+            {
+                return "/img/Gold.png";
+            }
+
+            if (cell.LiveNeighbors > 0)
             {
                 return $"/img/tile{cell.LiveNeighbors}.png";
             }
-            else
-            {
-                return "/img/revealed.png";
-            }
+
+            return "/img/revealed.png";
         }
 
-        // Milestone 3:
-        // This helper method formats the elapsed game time
+        // Picks a funny message when the player finds the gold bag.
+        private string GetRandomGoldMessage()
+        {
+            string[] messages =
+            {
+                "You found the gold bag. Look at you accidentally making good decisions.",
+                "Gold bag found. The board finally decided to be nice for once.",
+                "You found bonus gold. Try not to act too humble about it.",
+                "That gold bag just saved your score from looking sad.",
+                "Well well well... somebody found the shiny little cheat code."
+            };
+
+            return messages[_random.Next(messages.Length)];
+        }
+
+        // Formats the elapsed game time for the board page.
         private string GetFormattedElapsedTime(string startTimeString)
         {
             string elapsedTimeFormatted = "00:00";
 
             if (!string.IsNullOrEmpty(startTimeString))
             {
-                // Milestone 3:
-                // Read the saved start time so the service can calculate elapsed time correctly
                 DateTime startTime = DateTime.Parse(startTimeString, null, System.Globalization.DateTimeStyles.RoundtripKind);
-
-                // Calculate how long the player has been in the current game
                 TimeSpan elapsedTime = DateTime.UtcNow - startTime;
 
-                // Format the time so it looks clean on the board
                 elapsedTimeFormatted = elapsedTime.ToString(@"mm\:ss");
             }
 

@@ -9,8 +9,11 @@
         public bool IsWin { get; set; }
         public int Score { get; set; }
 
-        // Method to initialize the board with mines and calculate live neighbors
-        public Board(int size)
+        // Tracks if the gold bag was found on the current move.
+        public bool GoldBagFoundThisMove { get; set; }
+
+        // Builds the board with mines, neighbor counts, and the gold bag for Hard mode.
+        public Board(int size, string difficulty = "Easy")
         {
             Size = size;
             Cells = new Cell[size][];
@@ -18,6 +21,7 @@
             for (int row = 0; row < size; row++)
             {
                 Cells[row] = new Cell[size];
+
                 for (int col = 0; col < size; col++)
                 {
                     Cells[row][col] = new Cell();
@@ -25,45 +29,64 @@
             }
 
             PlaceMines();
+
+            if (difficulty == "Hard")
+            {
+                PlaceGoldBag();
+            }
+
             CalculateLiveNeighbors();
         }
 
-        // Parameterless constructor for deserialization
+        // Needed so saved game data can be loaded back from JSON.
         public Board()
         {
         }
 
-        // Method to reveal a cell and update game state accordingly
+        // Reveals a cell and updates the game state.
         public bool RevealCell(int row, int col)
         {
+            GoldBagFoundThisMove = false;
+
             if (IsGameOver || IsWin)
+            {
                 return false;
+            }
 
             if (row < 0 || col < 0 || row >= Size || col >= Size)
+            {
                 return false;
+            }
 
             Cell clickedCell = Cells[row][col];
 
             if (clickedCell.IsVisited || clickedCell.IsFlagged)
+            {
                 return false;
+            }
 
             clickedCell.IsVisited = true;
 
-            // Bomb clicked = game over
+            // Hitting a mine ends the game.
             if (clickedCell.HasMine)
             {
                 IsGameOver = true;
                 return true;
             }
 
-            // Award points for numbered tiles only
-            if (clickedCell.LiveNeighbors > 0)
+            // Finding the gold bag triples the current score.
+            if (clickedCell.HasGoldBag)
+            {
+                Score = Score * 3;
+                GoldBagFoundThisMove = true;
+            }
+            else if (clickedCell.LiveNeighbors > 0)
             {
                 Score += clickedCell.LiveNeighbors * 10;
             }
 
-            // Optional: reveal blank areas automatically
-            if (clickedCell.LiveNeighbors == 0)
+            // Reveal blank areas around safe empty tiles.
+            if (clickedCell.LiveNeighbors == 0 && !clickedCell.HasGoldBag)
             {
                 FloodFillReveal(row, col);
             }
@@ -72,7 +95,7 @@
             return true;
         }
 
-        // Method to reveal surrounding blank cells
+        // Reveals connected blank cells and nearby numbered cells.
         private void FloodFillReveal(int row, int col)
         {
             for (int r = row - 1; r <= row + 1; r++)
@@ -80,15 +103,21 @@
                 for (int c = col - 1; c <= col + 1; c++)
                 {
                     if (r < 0 || c < 0 || r >= Size || c >= Size)
+                    {
                         continue;
+                    }
 
                     if (r == row && c == col)
+                    {
                         continue;
+                    }
 
                     Cell neighbor = Cells[r][c];
 
-                    if (neighbor.IsVisited || neighbor.IsFlagged || neighbor.HasMine)
+                    if (neighbor.IsVisited || neighbor.IsFlagged || neighbor.HasMine || neighbor.HasGoldBag)
+                    {
                         continue;
+                    }
 
                     neighbor.IsVisited = true;
 
@@ -105,14 +134,13 @@
             }
         }
 
-        // Milestone 3:
-        // This lets the service check for a win after flag changes too
+        // Lets the service check for a win after flag changes.
         public void UpdateWinStatus()
         {
             CheckForWin();
         }
 
-        // Method to check if the player has won
+        // Checks if every needed cell has been handled.
         private void CheckForWin()
         {
             for (int row = 0; row < Size; row++)
@@ -121,8 +149,6 @@
                 {
                     Cell cell = Cells[row][col];
 
-                    // Milestone 3:
-                    // The player wins when every cell has either been revealed or flagged
                     if (!cell.IsVisited && !cell.IsFlagged)
                     {
                         return;
@@ -133,7 +159,7 @@
             IsWin = true;
         }
 
-        // Method to place mines randomly on the board
+        // Places mines randomly on the board.
         private void PlaceMines()
         {
             Random rand = new Random();
@@ -145,7 +171,7 @@
                 int row = rand.Next(Size);
                 int col = rand.Next(Size);
 
-                if (Cells[row] != null && Cells[row][col] != null && !Cells[row][col].HasMine)
+                if (!Cells[row][col].HasMine)
                 {
                     Cells[row][col].HasMine = true;
                     placed++;
@@ -153,7 +179,26 @@
             }
         }
 
-        // Method to calculate the number of live neighbors for each cell
+        // Places one gold bag on a safe tile for Hard mode.
+        private void PlaceGoldBag()
+        {
+            Random rand = new Random();
+            bool placed = false;
+
+            while (!placed)
+            {
+                int row = rand.Next(Size);
+                int col = rand.Next(Size);
+
+                if (!Cells[row][col].HasMine)
+                {
+                    Cells[row][col].HasGoldBag = true;
+                    placed = true;
+                }
+            }
+        }
+
+        // Counts how many mines are around each cell.
         private void CalculateLiveNeighbors()
         {
             for (int row = 0; row < Size; row++)
