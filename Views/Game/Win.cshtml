@@ -65,23 +65,60 @@
         z-index: 2;
     }
 
+    .hall-form-box {
+        margin: 25px auto 0 auto;
+        max-width: 420px;
+        background-color: white;
+        border: 2px solid #d4af37;
+        border-radius: 15px;
+        padding: 18px 22px;
+        position: relative;
+        z-index: 2;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+    }
+
+    .hall-form-label {
+        font-weight: bold;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .hall-name-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d4af37;
+        border-radius: 8px;
+        margin-bottom: 12px;
+    }
+
+    .hall-submit-btn,
     .play-again-btn {
         display: inline-block;
-        margin-top: 25px;
+        margin-top: 10px;
         padding: 12px 24px;
         background-color: #d4af37;
         color: white;
         text-decoration: none;
         font-weight: bold;
         border-radius: 10px;
+        border: none;
         position: relative;
         z-index: 2;
     }
 
+        .hall-submit-btn:hover,
         .play-again-btn:hover {
             background-color: #b8942f;
             color: white;
         }
+
+    .hall-saved-message {
+        margin-top: 18px;
+        color: #2f7d32;
+        font-weight: bold;
+        position: relative;
+        z-index: 2;
+    }
 
     .coin {
         position: absolute;
@@ -278,7 +315,7 @@
         Winning Score: @ViewBag.Score
     </div>
 
-    @* Milestone 3: Show the player a little extra game info in a simple way. *@
+    @* Show the player the final game details in a simple way. *@
     <div class="details-box">
         Time: @ViewBag.Time seconds <br />
         Board Size: @ViewBag.BoardSize <br />
@@ -287,7 +324,33 @@
 
     <p class="score-message">@ViewBag.ScoreMessage</p>
 
-    @* Milestone 3: Give the player an easy way to start another game. *@
+    @if (TempData["HallOfFameMessage"] != null)
+    {
+        <p class="hall-saved-message">@TempData["HallOfFameMessage"]</p>
+    }
+    else
+    {
+        @* Let the player choose the name that appears on the Hall Of Fame page. *@
+        <form asp-controller="Game" asp-action="SaveHallOfFameScore" method="post" class="hall-form-box">
+            <label class="hall-form-label" for="displayName">
+                Enter the name you want shown in the Hall Of Fame:
+            </label>
+
+            <input type="text"
+                   id="displayName"
+                   name="displayName"
+                   class="hall-name-input"
+                   value="@ViewBag.GameOwner"
+                   maxlength="25"
+                   required />
+
+            <button type="submit" class="hall-submit-btn">
+                Save to Hall Of Fame
+            </button>
+        </form>
+    }
+
+    @* Give the player an easy way to start another game. *@
     <div>
         <a href="/Game/StartGame" class="play-again-btn">Play Again</a>
     </div>
